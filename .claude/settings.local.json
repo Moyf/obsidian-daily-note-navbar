@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config --local --list)",
+      "Bash(if [ -d \"node_modules/obsidian-daily-notes-interface\" ])",
+      "Bash(then find node_modules/obsidian-daily-notes-interface -name \"*.d.ts\" -o -name \"main.ts\" -o -name \"main.js\")",
+      "Bash(fi)",
+      "Bash(git *)",
+      "Bash(cat:*)",
+      "Bash(xxd:*)",
+      "Bash(node:*)",
+      "Bash(npx:*)",
+      "Bash(Select-String:*)",
+      "Bash(echo:*)",
+      "Bash(tree:*)",
+      "Bash(npm:*)",
+      "Bash(npm *)",
+      "Bash(git:*)",
+      "Bash(node esbuild.config.mjs production)",
+      "Bash(git checkout master)",
+      "Bash(git pull origin master)",
+      "Bash(git checkout -b feature/weekly-note-button)",
+      "Bash(npm run build)"
+    ]
+  }
+}

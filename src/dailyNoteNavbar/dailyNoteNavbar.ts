@@ -1,7 +1,7 @@
 import { ButtonComponent, MarkdownView, Notice, Menu, moment, Keymap } from "obsidian";
-import { getAllDailyNotes, getDailyNote } from "obsidian-daily-notes-interface";
-import { getDatesInWeekByDate, getDateFromFileName, getLastSunday, getNextMonday } from "../utils"; 
-import { FileOpenType } from "../types"; 
+import { getAllDailyNotes, getDailyNote, getAllWeeklyNotes, getWeeklyNote } from "obsidian-daily-notes-interface";
+import { getDatesInWeekByDate, getDateFromFileName, getLastSunday, getNextMonday, getWeeklyNoteFile } from "../utils";
+import { FileOpenType } from "../types";
 import { FILE_OPEN_TYPES_MAPPING, FILE_OPEN_TYPES_TO_PANE_TYPE } from "./consts";
 import { getDailyNoteFile } from "../utils";
 import DailyNoteNavbarPlugin from "../main";
@@ -51,6 +51,40 @@ export default class DailyNoteNavbar {
 		// Calculate extra button dates
 		const lastSunday = getLastSunday(baseDate, this.plugin.settings.firstDayOfWeek);
 		const nextMonday = getNextMonday(baseDate, this.plugin.settings.firstDayOfWeek);
+
+		// ========== Weekly note button (if enabled) ==========
+		if (this.plugin.settings.enableWeeklyNoteButton && this.plugin.hasWeeklyNotesDependencies()) {
+			// Calculate week start date for weekly note
+			let weekStart = baseDate.clone().startOf('isoWeek');
+			if (this.plugin.settings.firstDayOfWeek === "Sunday") {
+				if (weekStart.weekday() === 1) {
+					weekStart.subtract(1, "day");
+				}
+			}
+
+			const allWeeklyNotes = getAllWeeklyNotes();
+			const weeklyNote = getWeeklyNote(weekStart, allWeeklyNotes);
+			const weekNumber = weekStart.format(this.plugin.settings.weeklyNoteDisplayFormat);
+
+			const weeklyNoteButton = new ButtonComponent(this.containerEl)
+				.setClass("daily-note-navbar__date")
+				.setClass(weeklyNote ? "daily-note-navbar__default" : "daily-note-navbar__not-exists")
+				.setButtonText(`W${weekNumber}`)
+				.setTooltip(`Open weekly note for week ${weekNumber}`);
+
+			weeklyNoteButton.buttonEl.onClickEvent((event: MouseEvent) => {
+				const paneType = Keymap.isModEvent(event);
+				if (paneType && paneType !== true) {
+					const openType = FILE_OPEN_TYPES_TO_PANE_TYPE[paneType];
+					this.plugin.openWeeklyNote(weekStart, openType);
+				} else if (event.type === "click") {
+					const openType = event.ctrlKey ? "New tab" : this.plugin.settings.weeklyNoteOpenType;
+					this.plugin.openWeeklyNote(weekStart, openType);
+				} else if (event.type === "auxclick") {
+					this.createWeeklyNoteContextMenu(event, weekStart);
+				}
+			});
+		}
 
 		// Last Sunday button (if enabled)
 		if (this.plugin.settings.showExtraButtons) {
@@ -116,6 +150,36 @@ export default class DailyNoteNavbar {
 			}));
 
 		menu.showAtMouseEvent(event)
+	}
+
+	createWeeklyNoteContextMenu(event: MouseEvent, weekStart: moment.Moment) {
+		const menu = new Menu();
+
+		for (const [openType, itemValues] of Object.entries(FILE_OPEN_TYPES_MAPPING)) {
+			menu.addItem(item => item
+				.setIcon(itemValues.icon)
+				.setTitle(itemValues.title)
+				.onClick(async () => {
+					this.plugin.openWeeklyNote(weekStart, openType as FileOpenType);
+				}))
+		}
+
+		menu.addSeparator();
+
+		menu.addItem(item => item
+			.setIcon("copy")
+			.setTitle("Copy Obsidian URL")
+			.onClick(async () => {
+				const weeklyNote = await getWeeklyNoteFile(weekStart);
+				const extensionLength = weeklyNote.extension.length > 0 ? weeklyNote.extension.length + 1 : 0;
+				const fileName = encodeURIComponent(weeklyNote.path.slice(0, -extensionLength));
+				const vaultName = this.plugin.app.vault.getName();
+				const url = `obsidian://open?vault=${vaultName}&file=${fileName}`;
+				navigator.clipboard.writeText(url);
+				new Notice("URL copied to your clipboard");
+			}));
+
+		menu.showAtMouseEvent(event);
 	}
 
 	createDateButton(date: moment.Moment, currentDate: moment.Moment, isExtra = false) {
