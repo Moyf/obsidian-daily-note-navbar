@@ -1,7 +1,14 @@
 import { View, moment, TFile } from "obsidian";
 import { FirstDayOfWeek } from "./types";
 import DailyNoteNavbar from "./dailyNoteNavbar/dailyNoteNavbar";
-import { createDailyNote, getAllDailyNotes, getDailyNote } from 'obsidian-daily-notes-interface';
+import {
+	createDailyNote,
+	getAllDailyNotes,
+	getDailyNote,
+	createWeeklyNote,
+	getAllWeeklyNotes,
+	getWeeklyNote
+} from 'obsidian-daily-notes-interface';
 
 /**
  * Gets the dates in the entire week that the date is in.
@@ -137,4 +144,16 @@ export function getNextMonday(date: moment.Moment, firstDayOfWeek: FirstDayOfWee
 		// firstDayOfWeek is Sunday, last day is Saturday
 		return lastDayOfWeekDate.clone().add(2, "days");
 	}
+}
+
+/**
+ * Gets the weekly note file for the given date.
+ *
+ * @note This creates the weekly note if it doesn't already exist.
+ * @param {moment.Moment} date - The date to get file for.
+ * @return {Promise<TFile>} Returns the weekly note file.
+ */
+export async function getWeeklyNoteFile(date: moment.Moment): Promise<TFile> {
+	const allWeeklyNotes = getAllWeeklyNotes();
+	return getWeeklyNote(date, allWeeklyNotes) ?? await createWeeklyNote(date);
 }
