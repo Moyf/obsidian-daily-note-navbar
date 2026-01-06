@@ -10,6 +10,7 @@ export interface DailyNoteNavbarSettings {
 	firstDayOfWeek: FirstDayOfWeek;
 	defaultOpenType: FileOpenType;
 	setActive: boolean;
+	showExtraButtons: boolean;
 }
 
 /**
@@ -21,7 +22,8 @@ export const DEFAULT_SETTINGS: DailyNoteNavbarSettings = {
 	dailyNoteDateFormat: "YYYY-MM-DD",
 	firstDayOfWeek: "Monday",
 	defaultOpenType: "Active",
-	setActive: true
+	setActive: true,
+	showExtraButtons: false
 }
 
 /**
@@ -109,6 +111,18 @@ export class DailyNoteNavbarSettingTab extends PluginSettingTab {
 				.onChange(async value => {
 					this.plugin.settings.setActive = value;
 					this.plugin.saveSettings();
+				}));
+
+		// Show extra buttons
+		new Setting(containerEl)
+			.setName('Show extra buttons')
+			.setDesc('Show buttons for last Sunday and next Monday.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showExtraButtons)
+				.onChange(async value => {
+					this.plugin.settings.showExtraButtons = value;
+					await this.plugin.saveSettings();
+					this.plugin.rerenderNavbars();
 				}));
 
 		// File open type

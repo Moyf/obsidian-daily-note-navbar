@@ -1,6 +1,6 @@
 import { ButtonComponent, MarkdownView, Notice, Menu, moment, Keymap } from "obsidian";
 import { getAllDailyNotes, getDailyNote } from "obsidian-daily-notes-interface";
-import { getDatesInWeekByDate, getDateFromFileName } from "../utils"; 
+import { getDatesInWeekByDate, getDateFromFileName, getLastSunday, getNextMonday } from "../utils"; 
 import { FileOpenType } from "../types"; 
 import { FILE_OPEN_TYPES_MAPPING, FILE_OPEN_TYPES_TO_PANE_TYPE } from "./consts";
 import { getDailyNoteFile } from "../utils";
@@ -45,7 +45,17 @@ export default class DailyNoteNavbar {
 		this.containerEl.replaceChildren();
 
 		const currentDate = moment();
-		const dates = getDatesInWeekByDate(this.date.clone().add(this.weekOffset, "week"), this.plugin.settings.firstDayOfWeek);
+		const baseDate = this.date.clone().add(this.weekOffset, "week");
+		const dates = getDatesInWeekByDate(baseDate, this.plugin.settings.firstDayOfWeek);
+
+		// Calculate extra button dates
+		const lastSunday = getLastSunday(baseDate, this.plugin.settings.firstDayOfWeek);
+		const nextMonday = getNextMonday(baseDate, this.plugin.settings.firstDayOfWeek);
+
+		// Last Sunday button (if enabled)
+		if (this.plugin.settings.showExtraButtons) {
+			this.createDateButton(lastSunday, currentDate, true);
+		}
 
 		// Previous week button
 		new ButtonComponent(this.containerEl)
@@ -59,39 +69,7 @@ export default class DailyNoteNavbar {
 
 		// Daily note buttons
 		for (const date of dates) {
-			const dateString = date.format("YYYY-MM-DD");
-			const isActive = this.date.format("YYYY-MM-DD") === dateString;
-			const isCurrent = currentDate.format("YYYY-MM-DD") === dateString;
-			const exists = getDailyNote(date, getAllDailyNotes());
-			const stateClass = isActive ? "daily-note-navbar__active" : exists ? "daily-note-navbar__default" : "daily-note-navbar__not-exists"; 
-
-			const button = new ButtonComponent(this.containerEl)
-				.setClass("daily-note-navbar__date")
-				.setClass(stateClass)
-				.setButtonText(`${date.format(this.plugin.settings.dateFormat)} ${date.date()}`)
-				.setTooltip(`${date.format(this.plugin.settings.tooltipDateFormat)}`);
-			if (isCurrent) {
-				button.setClass("daily-note-navbar__current");
-			}
-
-			// Add context menu
-			button.buttonEl.onClickEvent((event: MouseEvent) => {
-				const paneType = Keymap.isModEvent(event);
-				if (paneType && paneType !== true) {
-					const openType = FILE_OPEN_TYPES_TO_PANE_TYPE[paneType];
-					this.plugin.openDailyNote(date, openType);
-				} else if (event.type === "click") {
-					const openType = event.ctrlKey ? "New tab" : this.plugin.settings.defaultOpenType;
-					// Skip as it is already open
-					const isActive = this.date.format("YYYY-MM-DD") === date.format("YYYY-MM-DD");
-					if (isActive && openType === "Active") {
-						return;
-					}
-					this.plugin.openDailyNote(date, openType);
-				} else if (event.type === "auxclick") {
-					this.createContextMenu(event, date);
-				}
-			});
+			this.createDateButton(date, currentDate);
 		}
 
 		// Next week button
@@ -103,6 +81,11 @@ export default class DailyNoteNavbar {
 				this.weekOffset++;
 				this.rerender();
 			});
+
+		// Next Monday button (if enabled)
+		if (this.plugin.settings.showExtraButtons) {
+			this.createDateButton(nextMonday, currentDate, true);
+		}
 	}
 
 	createContextMenu(event: MouseEvent, date: moment.Moment) {
@@ -133,5 +116,42 @@ export default class DailyNoteNavbar {
 			}));
 
 		menu.showAtMouseEvent(event)
+	}
+
+	createDateButton(date: moment.Moment, currentDate: moment.Moment, isExtra = false) {
+		const dateString = date.format("YYYY-MM-DD");
+		const isActive = this.date.format("YYYY-MM-DD") === dateString;
+		const isCurrent = currentDate.format("YYYY-MM-DD") === dateString;
+		const exists = getDailyNote(date, getAllDailyNotes());
+		const stateClass = isActive ? "daily-note-navbar__active" : exists ? "daily-note-navbar__default" : "daily-note-navbar__not-exists";
+
+		const button = new ButtonComponent(this.containerEl)
+			.setClass("daily-note-navbar__date")
+			.setClass(stateClass)
+			.setButtonText(`${date.format(this.plugin.settings.dateFormat)} ${date.date()}`)
+			.setTooltip(`${date.format(this.plugin.settings.tooltipDateFormat)}`);
+		if (isCurrent) {
+			button.setClass("daily-note-navbar__current");
+		}
+		if (isExtra) {
+			button.setClass("daily-note-navbar__extra");
+		}
+
+		button.buttonEl.onClickEvent((event: MouseEvent) => {
+			const paneType = Keymap.isModEvent(event);
+			if (paneType && paneType !== true) {
+				const openType = FILE_OPEN_TYPES_TO_PANE_TYPE[paneType];
+				this.plugin.openDailyNote(date, openType);
+			} else if (event.type === "click") {
+				const openType = event.ctrlKey ? "New tab" : this.plugin.settings.defaultOpenType;
+				const isActive = this.date.format("YYYY-MM-DD") === date.format("YYYY-MM-DD");
+				if (isActive && openType === "Active") {
+					return;
+				}
+				this.plugin.openDailyNote(date, openType);
+			} else if (event.type === "auxclick") {
+				this.createContextMenu(event, date);
+			}
+		});
 	}
 }
