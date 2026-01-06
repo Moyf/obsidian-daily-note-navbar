@@ -50,10 +50,12 @@ export const DEFAULT_SETTINGS: DailyNoteNavbarSettings = {
  */
 export class DailyNoteNavbarSettingTab extends PluginSettingTab {
 	plugin: DailyNoteBarPlugin;
+	icon: string;
 
 	constructor(app: App, plugin: DailyNoteBarPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.icon = "milestone";
 	}
 
 	display() {
