@@ -68,6 +68,7 @@ export default class DailyNoteNavbar {
 
 			const weeklyNoteButton = new ButtonComponent(this.containerEl)
 				.setClass("daily-note-navbar__date")
+				.setClass("daily-note-navbar__weekly")
 				.setClass(weeklyNote ? "daily-note-navbar__default" : "daily-note-navbar__not-exists")
 				.setButtonText(`W${weekNumber}`)
 				.setTooltip(`Open weekly note for week ${weekNumber}`);

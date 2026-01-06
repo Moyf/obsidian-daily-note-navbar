@@ -20,7 +20,13 @@
       "Bash(git checkout master)",
       "Bash(git pull origin master)",
       "Bash(git checkout -b feature/weekly-note-button)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(git merge --no-ff feature/weekly-note-button)",
+      "Bash(git branch -d feature/weekly-note-button)",
+      "Bash(git checkout feature/weekly-note-button)",
+      "Bash(git checkout -b feature/weekly-note-button-style)",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"Add weekly note button styling and fix settings layout\n\n- Add daily-note-navbar__weekly CSS class for special styling\n- Move General settings to top without group title\n- Add Implementation Notes section to CLAUDE.md documenting lessons learned\")"
     ]
   }
 }

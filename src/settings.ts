@@ -59,6 +59,40 @@ export class DailyNoteNavbarSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
+		// ========== General (no title, put at top) ==========
+		new Setting(containerEl)
+			.setName('First day of week')
+			.setDesc('The first day in the daily note bar.')
+			.addDropdown(dropdown => dropdown
+				.addOptions(toRecord(FIRST_DAY_OF_WEEK.map((item) => item)))
+				.setValue(this.plugin.settings.firstDayOfWeek)
+				.onChange(async (value: FirstDayOfWeek) => {
+					this.plugin.settings.firstDayOfWeek = value;
+					await this.plugin.saveSettings();
+					this.plugin.rerenderNavbars();
+				}));
+
+		new Setting(containerEl)
+			.setName('Open files as active')
+			.setDesc('Make files active when they are opened.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.setActive)
+				.onChange(async value => {
+					this.plugin.settings.setActive = value;
+					this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Show extra buttons')
+			.setDesc('Show buttons for last Sunday and next Monday.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showExtraButtons)
+				.onChange(async value => {
+					this.plugin.settings.showExtraButtons = value;
+					await this.plugin.saveSettings();
+					this.plugin.rerenderNavbars();
+				}));
+
 		// ========== Daily Notes ==========
 		containerEl.createEl('h2', { text: 'Daily Notes' });
 
@@ -171,42 +205,6 @@ export class DailyNoteNavbarSettingTab extends PluginSettingTab {
 				.onChange(async (value: FileOpenType) => {
 					this.plugin.settings.weeklyNoteOpenType = value;
 					await this.plugin.saveSettings();
-				}));
-
-		// ========== General ==========
-		containerEl.createEl('h2', { text: 'General' });
-
-		new Setting(containerEl)
-			.setName('First day of week')
-			.setDesc('The first day in the daily note bar.')
-			.addDropdown(dropdown => dropdown
-				.addOptions(toRecord(FIRST_DAY_OF_WEEK.map((item) => item)))
-				.setValue(this.plugin.settings.firstDayOfWeek)
-				.onChange(async (value: FirstDayOfWeek) => {
-					this.plugin.settings.firstDayOfWeek = value;
-					await this.plugin.saveSettings();
-					this.plugin.rerenderNavbars();
-				}));
-
-		new Setting(containerEl)
-			.setName('Open files as active')
-			.setDesc('Make files active when they are opened.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.setActive)
-				.onChange(async value => {
-					this.plugin.settings.setActive = value;
-					this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Show extra buttons')
-			.setDesc('Show buttons for last Sunday and next Monday.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.showExtraButtons)
-				.onChange(async value => {
-					this.plugin.settings.showExtraButtons = value;
-					await this.plugin.saveSettings();
-					this.plugin.rerenderNavbars();
 				}));
 	}
 }

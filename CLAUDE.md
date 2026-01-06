@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is an Obsidian plugin that adds a navigation bar to daily notes, allowing users to quickly navigate between sequential daily notes. The plugin replaces the default view header title container in daily note files with a custom navbar showing a week's worth of dates.
+This is an Obsidian plugin that adds a navigation bar to daily notes, allowing users to quickly navigate between sequential daily notes and weekly notes. The plugin replaces the default view header title container in daily note files with a custom navbar showing a week's worth of dates.
 
 ## Development Commands
 
@@ -63,7 +63,9 @@ npm version
 
 ### Dependencies
 
-- **obsidian-daily-notes-interface**: Core library for daily note operations (`getAllDailyNotes`, `getDailyNote`, `createDailyNote`)
+- **obsidian-daily-notes-interface**: Core library for daily/weekly note operations
+  - Daily: `getAllDailyNotes`, `getDailyNote`, `createDailyNote`
+  - Weekly: `getAllWeeklyNotes`, `getWeeklyNote`, `createWeeklyNote`
 - Requires either Daily Notes (built-in) or Periodic Notes (community plugin) to be enabled
 
 ### Build System
@@ -80,6 +82,7 @@ Uses BEM-like pattern:
 - Base: `.daily-note-navbar`
 - States: `daily-note-navbar__active`, `daily-note-navbar__current`, `daily-note-navbar__not-exists`
 - Actions: `daily-note-navbar__change-week`
+- Component-specific: `daily-note-navbar__weekly` (for weekly note button)
 - Utilities: `daily-note-navbar__hidden`
 
 ### Code Style
@@ -100,3 +103,61 @@ The plugin supports multiple ways to open daily notes:
 - `Split down` - Horizontal split
 
 Opening behavior is determined by click modifiers (Ctrl+click, middle-click) or the `defaultOpenType` setting.
+
+## Implementation Notes & Lessons Learned
+
+### Weekly Notes Support (v0.3.0)
+
+When adding weekly notes support, several important patterns were established:
+
+1. **Settings Organization**:
+   - General settings (First day of week, Open files as active, etc.) should be at the top WITHOUT a group title
+   - Feature-specific settings (Daily Notes, Weekly Notes) get `h2` group titles
+   - This makes the most common settings easily accessible
+
+2. **TypeScript Type Handling**:
+   - When accessing `app.plugins.getPlugin()`, use `// @ts-ignore` comment
+   - The Obsidian type definitions don't include all plugin-related properties
+   - Example: `this.app.plugins.getPlugin("periodic-notes")` requires `@ts-ignore`
+
+3. **Weekly Note Date Calculation**:
+   - Use `date.clone().startOf('isoWeek')` for ISO week start (Monday)
+   - Handle Sunday start specially: if `firstDayOfWeek === "Sunday"`, subtract 1 day from Monday
+   - The week start date is used as the key for `getWeeklyNote()`
+
+4. **Button Rendering Order**:
+   - Weekly note button should be the FIRST button (leftmost)
+   - Before any extra buttons (Last Sunday)
+   - Before the Previous week arrow button
+
+5. **CSS Styling for Special Buttons**:
+   - Add a specific class like `daily-note-navbar__weekly` to distinguish special buttons
+   - Use `font-weight: var(--font-semibold)` for visual prominence
+   - Add hover effects with `color: var(--interactive-accent)`
+
+6. **Default Values Strategy**:
+   - New features should default to DISABLED to avoid disrupting existing users
+   - Example: `enableWeeklyNoteButton: false`
+   - Weekly note format should match Periodic Notes default: `"gggg-[W]ww"`
+
+7. **Display vs File Format Separation**:
+   - File format (for parsing filenames): e.g., `dailyNoteDateFormat: "YYYY-MM-DD"`
+   - Display format (for UI): e.g., `dateFormat: "ddd"`
+   - Keep these separate - one is strict parsing, the other is user-facing
+
+8. **Settings Naming Convention**:
+   - Use descriptive names: `weeklyNoteDisplayFormat` vs just `displayFormat`
+   - Group-related settings with consistent prefixes
+   - Match display names to internal keys for clarity
+
+### Git Workflow
+
+When working on features with multiple Claude instances:
+
+1. Use feature branches: `git checkout -b feature/description`
+2. Work on the feature branch
+3. Test with `npm run build` before committing
+4. Merge with `git checkout master && git merge --no-ff feature-branch`
+5. Delete feature branch after merge: `git branch -d feature-branch`
+
+This avoids conflicts when multiple AI agents work simultaneously.

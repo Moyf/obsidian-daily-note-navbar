@@ -24,6 +24,16 @@
 .daily-note-navbar__date {
 	min-width: 65px;
 }
+
+/* Weekly note button */
+.daily-note-navbar__weekly {
+	font-weight: var(--font-semibold);
+	min-width: 60px;
+}
+.daily-note-navbar button.daily-note-navbar__weekly:hover {
+	color: var(--interactive-accent);
+}
+
 .daily-note-navbar button.daily-note-navbar__active {
 	color: var(--text-on-accent);
 	background: var(--interactive-accent);
